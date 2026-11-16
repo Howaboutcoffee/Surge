@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
 const source = fs.readFileSync(path.join(__dirname, "../Stream-All.js"), "utf8");
-const names = ["ChatGPT", "Gemini", "Netflix", "Disney Plus+", "Youtube Premium"];
+const names = ["ChatGPT", "Netflix", "Disney Plus+", "Youtube Premium"];
 const reply = (body, status = 200, headers = {}) => ({
   status, headers, body: typeof body === "string" ? body : JSON.stringify(body)
 });
@@ -16,7 +16,6 @@ function happy(url) {
   if (url.endsWith("/trace")) return reply("loc=JP\n");
   if (url === "https://chatgpt.com/") return reply("<title>ChatGPT</title>");
   if (url.includes("youtube.com")) return reply('YouTube Premium {"GL":"JP"}');
-  if (url.includes("gemini.google.com")) return reply('<title>Google Gemini</title>WIZ_global_data ,2,1,200,"JPN"');
   throw new Error("Unexpected endpoint");
 }
 async function run(override = () => undefined, options = {}) {
@@ -53,12 +52,13 @@ function row(result, name) {
   return result.output.content.split("\n").find(line => line.startsWith(name + ":"));
 }
 
-test("native panel has the same five services in order and preserves existing routing", async () => {
+test("native panel has four services, skips Gemini requests, and preserves existing routing", async () => {
   const r = await run();
   assert.deepEqual(r.output.content.split("\n").map(line => line.split(":")[0]), names);
   assert.equal(r.output.icon, "play.tv.fill");
   assert.equal(r.output["icon-color"], "#FF2D55");
-  assert.equal(r.calls.length, 7);
+  assert.equal(r.calls.length, 6);
+  assert.ok(r.calls.every(c => !c.url.includes("gemini.google.com")));
   for (const name of names) assert.equal(row(r, name), name + ": 支持 ➟ ⟦🇯🇵⟧");
   assert.equal(r.calls.filter(c => c.method === "POST").length, 1);
   assert.match(r.calls.find(c => c.method === "POST").body, /mutation registerDevice/);
@@ -68,7 +68,7 @@ test("native panel has the same five services in order and preserves existing ro
     assert.equal(c["auto-cookie"], false);
     assert.ok(!("policy" in c) && !("opts" in c));
   }
-  assert.doesNotMatch(r.output.content, /<[^>]*>|undefined|Claude/);
+  assert.doesNotMatch(r.output.content, /<[^>]*>|undefined|Claude|Gemini/);
   assert.deepEqual(r.logs, []);
   assert.equal(r.outputs.length, 1);
 });
@@ -80,9 +80,6 @@ for (const [label, endpoint, response, expected] of [
   ["Netflix", "netflix.com", reply({ isAvailable: true, other: { isAvailable: false } }), /检测异常/],
   ["ChatGPT", "chatgpt.com/", reply('"unsupported_country"', 403), /未支持/],
   ["ChatGPT", "chatgpt.com/", reply("<title>Just a moment</title>"), /需要验证/],
-  ["Gemini", "gemini.google.com", reply("Gemini is not available in your country"), /未支持/],
-  ["Gemini", "gemini.google.com", reply("<title>Gemini</title>WIZ_global_data", 200, { "X-Originating-URL": "https://consent.google.com/" }), /需要验证/],
-  ["Gemini", "gemini.google.com", reply("login"), /检测异常/],
   ["Youtube Premium", "youtube.com", reply('YouTube Premium {"GL":"US"} Premium is not available in your country'), /未支持/],
   ["Youtube Premium", "youtube.com", reply("YouTube Premium"), /检测异常/],
   ["Youtube Premium", "youtube.com", reply("rate limited", 429), /检测异常/],
@@ -95,7 +92,7 @@ for (const [label, endpoint, response, expected] of [
   test(label + " classifies " + JSON.stringify(response) + " as " + expected, async () => {
     const r = await run(url => url.includes(endpoint) ? response : undefined);
     assert.match(row(r, label), expected);
-    const unaffected = label === "Netflix" ? "Gemini" : "Netflix";
+    const unaffected = label === "Netflix" ? "ChatGPT" : "Netflix";
     assert.match(row(r, unaffected), /支持.*🇯🇵/);
   });
 }
@@ -109,10 +106,10 @@ test("missing region stays unlabelled; TW matches the existing QuanX display con
 
 test("transport failures are isolated and private error contents are never logged", async () => {
   const r = await run(url => {
-    if (url.includes("gemini")) throw new Error("TLS failure SECRET-ENDPOINT");
+    if (url.endsWith("/graphql")) throw new Error("TLS failure SECRET-ENDPOINT");
     if (url.includes("youtube")) throw new Error("request timeout SECRET-ENDPOINT");
   });
-  assert.match(row(r, "Gemini"), /检测异常/);
+  assert.match(row(r, "Disney Plus+"), /检测异常/);
   assert.match(row(r, "Youtube Premium"), /检测超时/);
   assert.match(row(r, "Netflix"), /支持/);
   assert.doesNotMatch(JSON.stringify([r.output, r.logs]), /SECRET-ENDPOINT/);
@@ -126,9 +123,9 @@ test("hung callbacks finish once without clearTimeout (Surge native engine)", as
 });
 
 test("overall deadline retains completed checks and ignores late completions", async () => {
-  const r = await run(url => url.includes("gemini") ? new Promise(resolve => setTimeout(() => resolve(happy(url)), 45)) : undefined,
+  const r = await run(url => url.includes("youtube") ? new Promise(resolve => setTimeout(() => resolve(happy(url)), 45)) : undefined,
     { clock: ms => ms === 12000 ? 15 : 65, settle: 80 });
-  assert.match(row(r, "Gemini"), /检测超时/);
+  assert.match(row(r, "Youtube Premium"), /检测超时/);
   assert.match(row(r, "Netflix"), /支持.*🇯🇵/);
   assert.equal(r.outputs.length, 1);
 });

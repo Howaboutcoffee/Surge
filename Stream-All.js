@@ -1,5 +1,5 @@
 /**
- * Surge native panel: ChatGPT, Gemini, Netflix, Disney Plus+, Youtube Premium.
+ * Surge native panel: ChatGPT, Netflix, Disney Plus+, Youtube Premium.
  * Adapted from Howaboutcoffee/QuantumultX Scripts/streaming-ui-check.js
  * (KOP-XIAO, Hyseen, AtlantisGawrGura, CoiaPrant, Netflixxp).
  * Panel contract and Disney registerDevice: Rabbit-Spec / LucaLin233 Stream-All.
@@ -216,7 +216,8 @@ function displayResult(value) {
 
 async function main() {
   const checks = [
-    ["ChatGPT", testChatGPT], ["Gemini", testGemini],
+    ["ChatGPT", testChatGPT],
+    // ["Gemini", testGemini], // Disabled at user request; retained for re-enabling.
     ["Netflix", testNetflix], ["Disney Plus+", testDisney], ["Youtube Premium", testYouTube]
   ];
   const rows = checks.map(([name]) => [name, "检测超时，无法判断"]);
