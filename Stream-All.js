@@ -207,7 +207,7 @@ function displayResult(value) {
     const country = value.match(/ · ([A-Z]{2})\b/);
     const flagCode = country ? (country[1] === "TW" ? "CN" : country[1]) : "";
     const flag = [...flagCode].map(c => String.fromCodePoint(127397 + c.charCodeAt(0))).join("");
-    return "支持" + (flag ? " ➟ ⟦" + flag + "⟧" : "") + " 🎉";
+    return "支持" + (flag ? " ➟ ⟦" + flag + "⟧" : "");
   }
   if (/超时/.test(value)) return "检测超时 🚦";
   if (/网页验证|需要验证/.test(value)) return "需要验证 ❗️";

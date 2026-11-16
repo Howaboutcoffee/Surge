@@ -59,7 +59,7 @@ test("native panel has the same five services in order and preserves existing ro
   assert.equal(r.output.icon, "play.tv.fill");
   assert.equal(r.output["icon-color"], "#FF2D55");
   assert.equal(r.calls.length, 7);
-  for (const name of names) assert.match(row(r, name), /支持.*🇯🇵/);
+  for (const name of names) assert.equal(row(r, name), name + ": 支持 ➟ ⟦🇯🇵⟧");
   assert.equal(r.calls.filter(c => c.method === "POST").length, 1);
   assert.match(r.calls.find(c => c.method === "POST").body, /mutation registerDevice/);
   for (const c of r.calls) {
@@ -104,7 +104,7 @@ test("missing region stays unlabelled; TW matches the existing QuanX display con
   const r = await run(url => url.endsWith("/trace") ? reply("loc=TW\n") :
     url.endsWith("/graphql") ? reply({ extensions: { session: { inSupportedLocation: "true" } } }) : undefined);
   assert.match(row(r, "ChatGPT"), /🇨🇳/);
-  assert.equal(row(r, "Disney Plus+"), "Disney Plus+: 支持 🎉");
+  assert.equal(row(r, "Disney Plus+"), "Disney Plus+: 支持");
 });
 
 test("transport failures are isolated and private error contents are never logged", async () => {
