@@ -16,10 +16,12 @@
 stream-all = script-name=stream-all, title="流媒体解锁检测", content="请刷新面板", update-interval=600
 
 [Script]
-stream-all = type=generic, timeout=15, script-path=https://raw.githubusercontent.com/Howaboutcoffee/Surge/main/Stream-All.js
+stream-all = type=generic, timeout=15, script-path=https://raw.githubusercontent.com/Howaboutcoffee/Surge/main/Stream-All.js?v=f91629a
 ```
 
 需要本地使用时，将 `Stream-All.js` 导入 Surge 脚本编辑器，并把 `script-path` 改为本地脚本名称 `Stream-All.js`。
+
+模块更新和脚本缓存更新相互独立。模块中的脚本链接带版本标记；发布脚本改动时同步更新此标记，让模块更新后使用新下载地址。如果仍显示旧结果，请刷新面板，并确认旧模块已经停用。
 
 ## 行为和判定
 
